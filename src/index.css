@@ -48,6 +48,32 @@ body {
   gap: 1rem;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.btn-share {
+  background: rgba(59, 130, 246, 0.14);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 10px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background 0.18s;
+}
+
+.btn-share:hover {
+  background: rgba(59, 130, 246, 0.25);
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -345,12 +371,27 @@ body {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
   gap: 0.65rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.add-food-macros-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.65rem;
+  margin-bottom: 1.35rem;
 }
 
 @media (max-width: 560px) {
   .add-food-form {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .add-food-form input:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .stats-row, .macros-grid {
+    grid-template-columns: 1fr;
   }
 }
 

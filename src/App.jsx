@@ -12,7 +12,9 @@ import {
   TrendingUp,
   Scale,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Share2,
+  Check
 } from 'lucide-react'
 
 const ACTIVITY_LEVELS = [
@@ -39,29 +41,54 @@ const QUICK_FOODS = [
   { name: 'Авокадо (100 г)', kcal: 160, protein: 2, fat: 15, carbs: 9 },
 ]
 
+const DEFAULT_PROFILE = {
+  gender: 'female',
+  age: 26,
+  weight: 62,
+  height: 168,
+  activity: 1.375,
+  goal: 'maintain',
+}
+
+const DEFAULT_MEALS = [
+  { id: 1, name: 'Вівсянка з ягодами', kcal: 240, protein: 8, fat: 5, carbs: 42 },
+  { id: 2, name: 'Куряче філе та салат', kcal: 320, protein: 42, fat: 10, carbs: 14 },
+]
+
+function formatNum(num) {
+  const n = Number(num) || 0
+  return Math.round(n * 10) / 10
+}
+
 export default function App() {
   const [profile, setProfile] = useState(() => {
-    const saved = localStorage.getItem('cf_profile')
-    return saved
-      ? JSON.parse(saved)
-      : {
-          gender: 'female',
-          age: 26,
-          weight: 62,
-          height: 168,
-          activity: 1.375,
-          goal: 'maintain',
+    try {
+      const saved = localStorage.getItem('cf_profile')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed && typeof parsed === 'object') {
+          return { ...DEFAULT_PROFILE, ...parsed }
         }
+      }
+    } catch {
+      // ignore corrupted storage
+    }
+    return DEFAULT_PROFILE
   })
 
   const [meals, setMeals] = useState(() => {
-    const saved = localStorage.getItem('cf_meals')
-    return saved
-      ? JSON.parse(saved)
-      : [
-          { id: 1, name: 'Вівсянка з ягодами', kcal: 240, protein: 8, fat: 5, carbs: 42 },
-          { id: 2, name: 'Куряче філе та салат', kcal: 320, protein: 42, fat: 10, carbs: 14 },
-        ]
+    try {
+      const saved = localStorage.getItem('cf_meals')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed)) {
+          return parsed
+        }
+      }
+    } catch {
+      // ignore corrupted storage
+    }
+    return DEFAULT_MEALS
   })
 
   const [foodForm, setFoodForm] = useState({
@@ -72,22 +99,44 @@ export default function App() {
     carbs: '',
   })
 
+  const [copiedLink, setCopiedLink] = useState(false)
+
   useEffect(() => {
-    localStorage.setItem('cf_profile', JSON.stringify(profile))
+    try {
+      localStorage.setItem('cf_profile', JSON.stringify(profile))
+    } catch {
+      // ignore storage quota errors
+    }
   }, [profile])
 
   useEffect(() => {
-    localStorage.setItem('cf_meals', JSON.stringify(meals))
+    try {
+      localStorage.setItem('cf_meals', JSON.stringify(meals))
+    } catch {
+      // ignore storage quota errors
+    }
   }, [meals])
 
   // Формула Міффліна — Сан-Жеора
   const stats = useMemo(() => {
-    const w = Number(profile.weight) || 0
-    const h = Number(profile.height) || 0
-    const a = Number(profile.age) || 0
+    const w = Math.max(0, Number(profile.weight) || 0)
+    const h = Math.max(0, Number(profile.height) || 0)
+    const a = Math.max(0, Number(profile.age) || 0)
+
+    if (w <= 0 || h <= 0 || a <= 0) {
+      return {
+        bmr: 0,
+        tdee: 0,
+        targetCalories: 0,
+        targetProtein: 0,
+        targetFat: 0,
+        targetCarbs: 0,
+      }
+    }
+
     const base = 10 * w + 6.25 * h - 5 * a
     const bmr = Math.max(0, Math.round(profile.gender === 'male' ? base + 5 : base - 161))
-    const tdee = Math.round(bmr * Number(profile.activity))
+    const tdee = Math.round(bmr * (Number(profile.activity) || 1.2))
     const currentGoal = GOALS.find((g) => g.id === profile.goal) || GOALS[1]
     const targetCalories = Math.round(tdee * (1 + currentGoal.delta))
 
@@ -107,7 +156,7 @@ export default function App() {
   }, [profile])
 
   const totals = useMemo(() => {
-    return meals.reduce(
+    const raw = meals.reduce(
       (acc, item) => ({
         kcal: acc.kcal + (Number(item.kcal) || 0),
         protein: acc.protein + (Number(item.protein) || 0),
@@ -116,19 +165,42 @@ export default function App() {
       }),
       { kcal: 0, protein: 0, fat: 0, carbs: 0 }
     )
+    return {
+      kcal: Math.round(raw.kcal),
+      protein: formatNum(raw.protein),
+      fat: formatNum(raw.fat),
+      carbs: formatNum(raw.carbs),
+    }
   }, [meals])
+
+  // Автопідрахунок калорій з БЖВ, якщо користувач ввів лише БЖВ і залишив поле калорій порожнім
+  const autoCalculatedKcal = useMemo(() => {
+    const p = Math.max(0, Number(foodForm.protein) || 0)
+    const f = Math.max(0, Number(foodForm.fat) || 0)
+    const c = Math.max(0, Number(foodForm.carbs) || 0)
+    if (p === 0 && f === 0 && c === 0) return 0
+    return Math.round(p * 4 + f * 9 + c * 4)
+  }, [foodForm.protein, foodForm.fat, foodForm.carbs])
 
   const handleAddFood = (e) => {
     e.preventDefault()
-    if (!foodForm.name.trim() || !foodForm.kcal) return
+    const cleanName = foodForm.name.trim()
+    if (!cleanName) return
+
+    const finalKcal =
+      foodForm.kcal !== ''
+        ? Math.max(0, Math.round(Number(foodForm.kcal) || 0))
+        : autoCalculatedKcal
+
+    if (finalKcal <= 0 && foodForm.kcal === '') return
 
     const newMeal = {
-      id: Date.now(),
-      name: foodForm.name.trim(),
-      kcal: Math.round(Number(foodForm.kcal) || 0),
-      protein: Math.round(Number(foodForm.protein) || 0),
-      fat: Math.round(Number(foodForm.fat) || 0),
-      carbs: Math.round(Number(foodForm.carbs) || 0),
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      name: cleanName,
+      kcal: finalKcal,
+      protein: formatNum(Math.max(0, Number(foodForm.protein) || 0)),
+      fat: formatNum(Math.max(0, Number(foodForm.fat) || 0)),
+      carbs: formatNum(Math.max(0, Number(foodForm.carbs) || 0)),
     }
 
     setMeals((prev) => [newMeal, ...prev])
@@ -138,7 +210,7 @@ export default function App() {
   const handleQuickAdd = (preset) => {
     setMeals((prev) => [
       {
-        id: Date.now() + Math.random(),
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         ...preset,
       },
       ...prev,
@@ -149,10 +221,23 @@ export default function App() {
     setMeals((prev) => prev.filter((item) => item.id !== id))
   }
 
+  const handleShare = async () => {
+    const shareUrl = window.location.href
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      setCopiedLink(true)
+      setTimeout(() => setCopiedLink(false), 2500)
+    } catch {
+      setCopiedLink(true)
+      setTimeout(() => setCopiedLink(false), 2500)
+    }
+  }
+
   const remainingCalories = stats.targetCalories - totals.kcal
-  const calorieProgress = stats.targetCalories > 0
-    ? Math.min(100, Math.round((totals.kcal / stats.targetCalories) * 100))
-    : 0
+  const calorieProgress =
+    stats.targetCalories > 0
+      ? Math.min(100, Math.round((totals.kcal / stats.targetCalories) * 100))
+      : 0
 
   return (
     <div className="app-container">
@@ -166,15 +251,25 @@ export default function App() {
             <p>Розумний калькулятор калорій, TDEE та щоденного раціону</p>
           </div>
         </div>
-        {meals.length > 0 && (
+        <div className="header-actions">
           <button
             type="button"
-            className="btn-secondary"
-            onClick={() => setMeals([])}
+            className="btn-share"
+            onClick={handleShare}
           >
-            <RotateCcw size={15} /> Очистити щоденник
+            {copiedLink ? <Check size={15} /> : <Share2 size={15} />}
+            {copiedLink ? 'Посилання скопійовано!' : 'Поділитися'}
           </button>
-        )}
+          {meals.length > 0 && (
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => setMeals([])}
+            >
+              <RotateCcw size={15} /> Очистити щоденник
+            </button>
+          )}
+        </div>
       </header>
 
       <main className="grid-layout">
@@ -225,7 +320,7 @@ export default function App() {
                 type="number"
                 min="25"
                 max="300"
-                step="0.5"
+                step="0.1"
                 className="input-field"
                 value={profile.weight}
                 onChange={(e) => setProfile({ ...profile, weight: e.target.value })}
@@ -290,15 +385,15 @@ export default function App() {
           <div className="stats-banner">
             <div className="stats-row">
               <div className="stat-item">
-                <div className="stat-value">{stats.bmr}</div>
+                <div className="stat-value" data-testid="bmr-value">{stats.bmr}</div>
                 <div className="stat-label">Базовий обмін (BMR)</div>
               </div>
               <div className="stat-item">
-                <div className="stat-value">{stats.tdee}</div>
+                <div className="stat-value" data-testid="tdee-value">{stats.tdee}</div>
                 <div className="stat-label">Підтримка (TDEE)</div>
               </div>
               <div className="stat-item">
-                <div className="stat-value highlight">{stats.targetCalories}</div>
+                <div className="stat-value highlight" data-testid="target-kcal-value">{stats.targetCalories}</div>
                 <div className="stat-label">Ваша норма (ккал)</div>
               </div>
             </div>
@@ -307,7 +402,7 @@ export default function App() {
               <div className="macro-box">
                 <div className="macro-header">
                   <span>Білки</span>
-                  <span>{Math.round(totals.protein)} / {stats.targetProtein} г</span>
+                  <span data-testid="protein-summary">{totals.protein} / {stats.targetProtein} г</span>
                 </div>
                 <div className="progress-bar-bg">
                   <div
@@ -323,7 +418,7 @@ export default function App() {
               <div className="macro-box">
                 <div className="macro-header">
                   <span>Жири</span>
-                  <span>{Math.round(totals.fat)} / {stats.targetFat} г</span>
+                  <span data-testid="fat-summary">{totals.fat} / {stats.targetFat} г</span>
                 </div>
                 <div className="progress-bar-bg">
                   <div
@@ -339,7 +434,7 @@ export default function App() {
               <div className="macro-box">
                 <div className="macro-header">
                   <span>Вуглеводи</span>
-                  <span>{Math.round(totals.carbs)} / {stats.targetCarbs} г</span>
+                  <span data-testid="carbs-summary">{totals.carbs} / {stats.targetCarbs} г</span>
                 </div>
                 <div className="progress-bar-bg">
                   <div
@@ -363,18 +458,18 @@ export default function App() {
 
           <div className="calorie-ring-section">
             <div className="calorie-summary-text">
-              <h3>
+              <h3 data-testid="consumed-kcal-heading">
                 {totals.kcal} <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 500 }}>/ {stats.targetCalories} ккал</span>
               </h3>
               <p>Спожито сьогодні ({calorieProgress}% від денної норми)</p>
             </div>
             <div>
               {remainingCalories >= 0 ? (
-                <span className="badge good">
+                <span className="badge good" data-testid="remaining-badge">
                   <CheckCircle2 size={15} /> Залишилось: {remainingCalories} ккал
                 </span>
               ) : (
-                <span className="badge over">
+                <span className="badge over" data-testid="remaining-badge">
                   <AlertCircle size={15} /> Перевищення на {Math.abs(remainingCalories)} ккал
                 </span>
               )}
@@ -409,24 +504,26 @@ export default function App() {
               />
               <input
                 type="number"
-                placeholder="Калорії (ккал)*"
+                placeholder={autoCalculatedKcal > 0 ? `Авто: ${autoCalculatedKcal} ккал` : 'Калорії (ккал)*'}
                 className="input-field"
                 min="0"
+                step="any"
                 value={foodForm.kcal}
                 onChange={(e) => setFoodForm({ ...foodForm, kcal: e.target.value })}
-                required
+                required={autoCalculatedKcal === 0}
               />
               <button type="submit" className="btn-primary">
                 <Plus size={18} /> Додати
               </button>
             </div>
 
-            <div className="add-food-form" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: '1.35rem' }}>
+            <div className="add-food-macros-row">
               <input
                 type="number"
                 placeholder="Білки (г)"
                 className="input-field"
                 min="0"
+                step="any"
                 value={foodForm.protein}
                 onChange={(e) => setFoodForm({ ...foodForm, protein: e.target.value })}
               />
@@ -435,6 +532,7 @@ export default function App() {
                 placeholder="Жири (г)"
                 className="input-field"
                 min="0"
+                step="any"
                 value={foodForm.fat}
                 onChange={(e) => setFoodForm({ ...foodForm, fat: e.target.value })}
               />
@@ -443,6 +541,7 @@ export default function App() {
                 placeholder="Вуглеводи (г)"
                 className="input-field"
                 min="0"
+                step="any"
                 value={foodForm.carbs}
                 onChange={(e) => setFoodForm({ ...foodForm, carbs: e.target.value })}
               />
@@ -460,7 +559,7 @@ export default function App() {
                   <div className="food-info">
                     <h4>{item.name}</h4>
                     <span>
-                      Б: {item.protein}г • Ж: {item.fat}г • В: {item.carbs}г
+                      Б: {formatNum(item.protein)}г • Ж: {formatNum(item.fat)}г • В: {formatNum(item.carbs)}г
                     </span>
                   </div>
                   <div className="food-actions">
