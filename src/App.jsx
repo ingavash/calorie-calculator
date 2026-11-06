@@ -117,6 +117,20 @@ export default function App() {
     }
   }, [meals])
 
+  // Безпечний ввід числових параметрів профілю
+  const handleProfileInput = (field, val) => {
+    if (val === '' || Number(val) >= 0) {
+      setProfile((prev) => ({ ...prev, [field]: val }))
+    }
+  }
+
+  // Безпечний ввід для форми додавання їжі
+  const handleFoodInput = (field, val) => {
+    if (val === '' || Number(val) >= 0) {
+      setFoodForm((prev) => ({ ...prev, [field]: val }))
+    }
+  }
+
   // Формула Міффліна — Сан-Жеора
   const stats = useMemo(() => {
     const w = Math.max(0, Number(profile.weight) || 0)
@@ -158,10 +172,10 @@ export default function App() {
   const totals = useMemo(() => {
     const raw = meals.reduce(
       (acc, item) => ({
-        kcal: acc.kcal + (Number(item.kcal) || 0),
-        protein: acc.protein + (Number(item.protein) || 0),
-        fat: acc.fat + (Number(item.fat) || 0),
-        carbs: acc.carbs + (Number(item.carbs) || 0),
+        kcal: acc.kcal + (Math.max(0, Number(item.kcal)) || 0),
+        protein: acc.protein + (Math.max(0, Number(item.protein)) || 0),
+        fat: acc.fat + (Math.max(0, Number(item.fat)) || 0),
+        carbs: acc.carbs + (Math.max(0, Number(item.carbs)) || 0),
       }),
       { kcal: 0, protein: 0, fat: 0, carbs: 0 }
     )
@@ -223,14 +237,32 @@ export default function App() {
 
   const handleShare = async () => {
     const shareUrl = window.location.href
+    let copied = false
     try {
-      await navigator.clipboard.writeText(shareUrl)
-      setCopiedLink(true)
-      setTimeout(() => setCopiedLink(false), 2500)
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(shareUrl)
+        copied = true
+      }
     } catch {
-      setCopiedLink(true)
-      setTimeout(() => setCopiedLink(false), 2500)
+      // fallback to input copy
     }
+
+    if (!copied) {
+      try {
+        const input = document.createElement('input')
+        input.value = shareUrl
+        document.body.appendChild(input)
+        input.select()
+        document.execCommand('copy')
+        document.body.removeChild(input)
+        copied = true
+      } catch {
+        // ignore
+      }
+    }
+
+    setCopiedLink(true)
+    setTimeout(() => setCopiedLink(false), 2500)
   }
 
   const remainingCalories = stats.targetCalories - totals.kcal
@@ -259,6 +291,12 @@ export default function App() {
               title={currentTheme === 'female' ? 'Гаєчка' : 'Рокфор'}
               className="character-avatar"
               data-testid="character-avatar"
+              onError={(e) => {
+                if (!e.currentTarget.dataset.retried) {
+                  e.currentTarget.dataset.retried = 'true'
+                  e.currentTarget.src = currentTheme === 'female' ? 'gadget.jpg' : 'monterey.jpg'
+                }
+              }}
             />
             <button
               type="button"
@@ -317,7 +355,7 @@ export default function App() {
                   placeholder="Напр. 25"
                   className="input-field"
                   value={profile.age}
-                  onChange={(e) => setProfile({ ...profile, age: e.target.value })}
+                  onChange={(e) => handleProfileInput('age', e.target.value)}
                 />
               </div>
 
@@ -332,7 +370,7 @@ export default function App() {
                   placeholder="Напр. 60"
                   className="input-field"
                   value={profile.weight}
-                  onChange={(e) => setProfile({ ...profile, weight: e.target.value })}
+                  onChange={(e) => handleProfileInput('weight', e.target.value)}
                 />
               </div>
 
@@ -346,7 +384,7 @@ export default function App() {
                   placeholder="Напр. 168"
                   className="input-field"
                   value={profile.height}
-                  onChange={(e) => setProfile({ ...profile, height: e.target.value })}
+                  onChange={(e) => handleProfileInput('height', e.target.value)}
                 />
               </div>
             </div>
@@ -418,7 +456,7 @@ export default function App() {
                     <div
                       className="progress-bar-fill"
                       style={{
-                        width: `${Math.min(100, (totals.protein / (stats.targetProtein || 1)) * 100)}%`,
+                        width: `${stats.targetProtein > 0 ? Math.min(100, (totals.protein / stats.targetProtein) * 100) : 0}%`,
                         background: 'var(--protein-color)',
                       }}
                     />
@@ -434,7 +472,7 @@ export default function App() {
                     <div
                       className="progress-bar-fill"
                       style={{
-                        width: `${Math.min(100, (totals.fat / (stats.targetFat || 1)) * 100)}%`,
+                        width: `${stats.targetFat > 0 ? Math.min(100, (totals.fat / stats.targetFat) * 100) : 0}%`,
                         background: 'var(--fat-color)',
                       }}
                     />
@@ -450,7 +488,7 @@ export default function App() {
                     <div
                       className="progress-bar-fill"
                       style={{
-                        width: `${Math.min(100, (totals.carbs / (stats.targetCarbs || 1)) * 100)}%`,
+                        width: `${stats.targetCarbs > 0 ? Math.min(100, (totals.carbs / stats.targetCarbs) * 100) : 0}%`,
                         background: 'var(--carbs-color)',
                       }}
                     />
@@ -507,6 +545,7 @@ export default function App() {
                 <input
                   type="text"
                   placeholder="Назва страви або продукту..."
+                  aria-label="Назва страви або продукту"
                   className="input-field"
                   value={foodForm.name}
                   onChange={(e) => setFoodForm({ ...foodForm, name: e.target.value })}
@@ -515,11 +554,12 @@ export default function App() {
                 <input
                   type="number"
                   placeholder={autoCalculatedKcal > 0 ? `Авто: ${autoCalculatedKcal} ккал` : 'Калорії (ккал)*'}
+                  aria-label="Калорії"
                   className="input-field"
                   min="0"
                   step="any"
                   value={foodForm.kcal}
-                  onChange={(e) => setFoodForm({ ...foodForm, kcal: e.target.value })}
+                  onChange={(e) => handleFoodInput('kcal', e.target.value)}
                   required={autoCalculatedKcal === 0}
                 />
                 <button type="submit" className="btn-primary">
@@ -531,29 +571,32 @@ export default function App() {
                 <input
                   type="number"
                   placeholder="Білки (г)"
+                  aria-label="Білки"
                   className="input-field"
                   min="0"
                   step="any"
                   value={foodForm.protein}
-                  onChange={(e) => setFoodForm({ ...foodForm, protein: e.target.value })}
+                  onChange={(e) => handleFoodInput('protein', e.target.value)}
                 />
                 <input
                   type="number"
                   placeholder="Жири (г)"
+                  aria-label="Жири"
                   className="input-field"
                   min="0"
                   step="any"
                   value={foodForm.fat}
-                  onChange={(e) => setFoodForm({ ...foodForm, fat: e.target.value })}
+                  onChange={(e) => handleFoodInput('fat', e.target.value)}
                 />
                 <input
                   type="number"
                   placeholder="Вуглеводи (г)"
+                  aria-label="Вуглеводи"
                   className="input-field"
                   min="0"
                   step="any"
                   value={foodForm.carbs}
-                  onChange={(e) => setFoodForm({ ...foodForm, carbs: e.target.value })}
+                  onChange={(e) => handleFoodInput('carbs', e.target.value)}
                 />
               </div>
             </form>

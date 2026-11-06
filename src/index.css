@@ -515,12 +515,19 @@ body {
   border: 1px solid var(--border-color);
   padding: 0.75rem 1rem;
   border-radius: 12px;
+  gap: 0.75rem;
+}
+
+.food-info {
+  min-width: 0;
+  overflow: hidden;
 }
 
 .food-info h4 {
   font-size: 0.92rem;
   font-weight: 600;
   color: var(--text-main);
+  word-break: break-word;
 }
 
 .food-info span {
@@ -532,12 +539,14 @@ body {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .food-kcal {
   font-weight: 700;
   color: var(--accent-primary);
   font-size: 0.95rem;
+  white-space: nowrap;
 }
 
 .icon-btn {
