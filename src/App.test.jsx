@@ -9,28 +9,24 @@ describe('CalorieFlow E2E User Flows', () => {
     localStorage.clear()
   })
 
-  it('calculates default BMR, TDEE, and target calories accurately', () => {
+  it('calculates default BMR, TDEE, and target calories accurately and applies female pink theme', () => {
     render(<App />)
-    // Default female: 26yo, 62kg, 168cm, activity 1.375, maintain
-    // BMR = 10*62 + 6.25*168 - 5*26 - 161 = 620 + 1050 - 130 - 161 = 1379
-    // TDEE = round(1379 * 1.375) = 1896
+    expect(document.body.dataset.theme).toBe('female')
     expect(screen.getByTestId('bmr-value')).toHaveTextContent('1379')
     expect(screen.getByTestId('tdee-value')).toHaveTextContent('1896')
     expect(screen.getByTestId('target-kcal-value')).toHaveTextContent('1896')
   })
 
-  it('recalculates BMR, TDEE, and goal calories when switching gender and goal', async () => {
+  it('switches to purple theme and recalculates BMR, TDEE, and goal calories when switching gender and goal', async () => {
     const user = userEvent.setup()
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Чоловіча' }))
-    // Male BMR = 620 + 1050 - 130 + 5 = 1545
-    // TDEE = round(1545 * 1.375) = 2124
+    expect(document.body.dataset.theme).toBe('male')
     expect(screen.getByTestId('bmr-value')).toHaveTextContent('1545')
     expect(screen.getByTestId('tdee-value')).toHaveTextContent('2124')
 
     await user.click(screen.getByRole('button', { name: /Схуднення/i }))
-    // Target = round(2124 * 0.82) = 1742
     expect(screen.getByTestId('target-kcal-value')).toHaveTextContent('1742')
   })
 
@@ -50,11 +46,9 @@ describe('CalorieFlow E2E User Flows', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    // Clear initial meals
     await user.click(screen.getByRole('button', { name: /Очистити щоденник/i }))
     expect(screen.getByText(/Ви ще не додали жодного прийому їжі/i)).toBeInTheDocument()
 
-    // Quick add Banana (105 kcal, 1.3g protein, 0.4g fat, 27g carbs)
     await user.click(screen.getByRole('button', { name: /\+ Банан/i }))
     expect(screen.getByTestId('consumed-kcal-heading')).toHaveTextContent('105 / 1896 ккал')
     expect(screen.getByTestId('protein-summary')).toHaveTextContent('1.3 / 142 г')
@@ -72,7 +66,6 @@ describe('CalorieFlow E2E User Flows', () => {
     await user.type(screen.getByPlaceholderText(/Жири/i), '2')
     await user.type(screen.getByPlaceholderText(/Вуглеводи/i), '10')
 
-    // Auto kcal = 25*4 + 2*9 + 10*4 = 100 + 18 + 40 = 158
     await user.click(screen.getByRole('button', { name: /Додати/i }))
 
     expect(screen.getByText('Протеїновий коктейль')).toBeInTheDocument()

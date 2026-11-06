@@ -107,6 +107,7 @@ export default function App() {
     } catch {
       // ignore storage quota errors
     }
+    document.body.dataset.theme = profile.gender === 'male' ? 'male' : 'female'
   }, [profile])
 
   useEffect(() => {
@@ -240,7 +241,7 @@ export default function App() {
       : 0
 
   return (
-    <div className="app-container">
+    <div className="app-container" data-theme={profile.gender === 'male' ? 'male' : 'female'}>
       <header className="header">
         <div className="brand">
           <div className="brand-icon">
