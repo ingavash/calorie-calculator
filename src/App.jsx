@@ -14,8 +14,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Share2,
-  Check,
-  Sparkles
+  Check
 } from 'lucide-react'
 
 const ACTIVITY_LEVELS = [
@@ -257,10 +256,13 @@ export default function App() {
             </div>
           </div>
           <div className="header-actions">
-            <span className="theme-pill" data-testid="theme-indicator">
-              <Sparkles size={14} />
-              {currentTheme === 'female' ? 'Рожева тема (Жіноча)' : 'Фіолетова тема (Чоловіча)'}
-            </span>
+            <img
+              src={currentTheme === 'female' ? './gadget.jpg' : './monterey.jpg'}
+              alt={currentTheme === 'female' ? 'Гаєчка' : 'Рокфор'}
+              title={currentTheme === 'female' ? 'Гаєчка' : 'Рокфор'}
+              className="character-avatar"
+              data-testid="character-avatar"
+            />
             <button
               type="button"
               className="btn-share"

@@ -9,24 +9,28 @@ describe('CalorieFlow E2E User Flows', () => {
     localStorage.clear()
   })
 
-  it('Case 1: Default female profile renders pink theme, BMR, TDEE, and target calories accurately', () => {
+  it('Case 1: Default female profile renders pink theme, Gadget avatar, BMR, TDEE, and target calories', () => {
     render(<App />)
     expect(document.body.dataset.theme).toBe('female')
     expect(screen.getByTestId('app-wrapper')).toHaveAttribute('data-theme', 'female')
-    expect(screen.getByTestId('theme-indicator')).toHaveTextContent('Рожева тема (Жіноча)')
+    const avatar = screen.getByTestId('character-avatar')
+    expect(avatar).toHaveAttribute('src', './gadget.jpg')
+    expect(avatar).toHaveAttribute('alt', 'Гаєчка')
     expect(screen.getByTestId('bmr-value')).toHaveTextContent('1379')
     expect(screen.getByTestId('tdee-value')).toHaveTextContent('1896')
     expect(screen.getByTestId('target-kcal-value')).toHaveTextContent('1896')
   })
 
-  it('Case 2: Switching to Male switches to purple theme and updates BMR, TDEE, and goal calories', async () => {
+  it('Case 2: Switching to Male switches to purple theme, Monterey Jack avatar, and updates BMR, TDEE, and goal calories', async () => {
     const user = userEvent.setup()
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: /Чоловіча/i }))
     expect(document.body.dataset.theme).toBe('male')
     expect(screen.getByTestId('app-wrapper')).toHaveAttribute('data-theme', 'male')
-    expect(screen.getByTestId('theme-indicator')).toHaveTextContent('Фіолетова тема (Чоловіча)')
+    const avatar = screen.getByTestId('character-avatar')
+    expect(avatar).toHaveAttribute('src', './monterey.jpg')
+    expect(avatar).toHaveAttribute('alt', 'Рокфор')
     expect(screen.getByTestId('bmr-value')).toHaveTextContent('1545')
     expect(screen.getByTestId('tdee-value')).toHaveTextContent('2124')
 
@@ -43,7 +47,6 @@ describe('CalorieFlow E2E User Flows', () => {
 
     const activitySelect = screen.getByLabelText(/Рівень фізичної активності/i)
     await user.selectOptions(activitySelect, '1.55')
-    // 1379 * 1.55 = 2137
     expect(screen.getByTestId('tdee-value')).toHaveTextContent('2137')
   })
 
