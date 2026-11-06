@@ -1,52 +1,51 @@
 :root,
-body[data-theme="female"] {
-  --bg-dark: #280a1c;
+body,
+body[data-theme="female"],
+.app-wrapper[data-theme="female"] {
+  --bg-dark: #831843;
   --bg-gradient:
-    radial-gradient(at 0% 0%, rgba(244, 114, 182, 0.35) 0px, transparent 55%),
-    radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.28) 0px, transparent 55%),
-    radial-gradient(at 50% 100%, rgba(251, 113, 133, 0.22) 0px, transparent 55%);
-  --bg-card: rgba(58, 16, 40, 0.78);
-  --bg-input: rgba(34, 8, 24, 0.72);
-  --border-color: rgba(244, 114, 182, 0.24);
-  --text-main: #fdf2f8;
-  --text-muted: #f4b6d2;
-  --accent-primary: #ec4899;
-  --accent-secondary: #db2777;
+    linear-gradient(135deg, #be185d 0%, #db2777 45%, #f43f5e 100%);
+  --bg-card: rgba(80, 7, 36, 0.72);
+  --bg-input: rgba(56, 5, 26, 0.75);
+  --border-color: rgba(251, 207, 232, 0.35);
+  --text-main: #fff1f2;
+  --text-muted: #fbcfe8;
+  --accent-primary: #f472b6;
+  --accent-secondary: #ec4899;
   --accent-active-text: #ffffff;
-  --accent-glow: rgba(236, 72, 153, 0.42);
-  --banner-bg: linear-gradient(135deg, rgba(236, 72, 153, 0.22), rgba(244, 63, 94, 0.16));
-  --banner-border: rgba(244, 114, 182, 0.38);
-  --chip-bg: rgba(236, 72, 153, 0.15);
-  --chip-border: rgba(244, 114, 182, 0.34);
-  --chip-text: #fbcfe8;
-  --protein-color: #f472b6;
-  --fat-color: #fbbf24;
-  --carbs-color: #c084fc;
+  --accent-glow: rgba(244, 114, 182, 0.55);
+  --banner-bg: linear-gradient(135deg, rgba(244, 114, 182, 0.32), rgba(251, 113, 133, 0.25));
+  --banner-border: rgba(251, 207, 232, 0.5);
+  --chip-bg: rgba(244, 114, 182, 0.25);
+  --chip-border: rgba(251, 207, 232, 0.45);
+  --chip-text: #fce7f3;
+  --protein-color: #f9a8d4;
+  --fat-color: #fde047;
+  --carbs-color: #d8b4fe;
 }
 
-body[data-theme="male"] {
-  --bg-dark: #160b2e;
+body[data-theme="male"],
+.app-wrapper[data-theme="male"] {
+  --bg-dark: #3b0764;
   --bg-gradient:
-    radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.36) 0px, transparent 55%),
-    radial-gradient(at 100% 0%, rgba(124, 58, 237, 0.28) 0px, transparent 55%),
-    radial-gradient(at 50% 100%, rgba(99, 102, 241, 0.22) 0px, transparent 55%);
-  --bg-card: rgba(35, 19, 68, 0.78);
-  --bg-input: rgba(19, 9, 41, 0.72);
-  --border-color: rgba(167, 139, 250, 0.24);
+    linear-gradient(135deg, #4c1d95 0%, #6d28d9 45%, #4338ca 100%);
+  --bg-card: rgba(46, 16, 101, 0.74);
+  --bg-input: rgba(29, 7, 68, 0.78);
+  --border-color: rgba(221, 214, 254, 0.35);
   --text-main: #f5f3ff;
-  --text-muted: #c4b5fd;
-  --accent-primary: #8b5cf6;
-  --accent-secondary: #6d28d9;
+  --text-muted: #ddd6fe;
+  --accent-primary: #a78bfa;
+  --accent-secondary: #8b5cf6;
   --accent-active-text: #ffffff;
-  --accent-glow: rgba(139, 92, 246, 0.42);
-  --banner-bg: linear-gradient(135deg, rgba(139, 92, 246, 0.22), rgba(99, 102, 241, 0.16));
-  --banner-border: rgba(167, 139, 250, 0.38);
-  --chip-bg: rgba(139, 92, 246, 0.15);
-  --chip-border: rgba(167, 139, 250, 0.34);
-  --chip-text: #ddd6fe;
-  --protein-color: #a78bfa;
-  --fat-color: #f59e0b;
-  --carbs-color: #38bdf8;
+  --accent-glow: rgba(167, 139, 250, 0.55);
+  --banner-bg: linear-gradient(135deg, rgba(167, 139, 250, 0.32), rgba(129, 140, 248, 0.25));
+  --banner-border: rgba(221, 214, 254, 0.5);
+  --chip-bg: rgba(167, 139, 250, 0.25);
+  --chip-border: rgba(221, 214, 254, 0.45);
+  --chip-text: #ede9fe;
+  --protein-color: #c4b5fd;
+  --fat-color: #fcd34d;
+  --carbs-color: #7dd3fc;
 }
 
 * {
@@ -57,13 +56,21 @@ body[data-theme="male"] {
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-gradient);
   background-color: var(--bg-dark);
-  background-image: var(--bg-gradient);
   color: var(--text-main);
   min-height: 100vh;
   line-height: 1.5;
+  transition: background 0.4s ease, color 0.3s ease;
+}
+
+.app-wrapper {
+  min-height: 100vh;
+  width: 100%;
+  background: var(--bg-gradient);
+  background-color: var(--bg-dark);
   padding-bottom: 3rem;
-  transition: background-color 0.4s ease, color 0.3s ease;
+  transition: background 0.4s ease;
 }
 
 .app-container {
@@ -86,6 +93,19 @@ body {
   align-items: center;
   gap: 0.65rem;
   flex-wrap: wrap;
+}
+
+.theme-pill {
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  border: 1px solid var(--chip-border);
+  border-radius: 10px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .btn-share {
@@ -130,9 +150,7 @@ body {
   font-size: 1.65rem;
   font-weight: 800;
   letter-spacing: -0.025em;
-  background: linear-gradient(to right, #fff, var(--chip-text));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #ffffff;
 }
 
 .brand p {
@@ -154,11 +172,11 @@ body {
 
 .card {
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(18px);
   border: 1px solid var(--border-color);
   border-radius: 20px;
   padding: 1.65rem;
-  box-shadow: 0 12px 32px -10px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 14px 34px -10px rgba(0, 0, 0, 0.4);
   transition: background 0.35s ease, border-color 0.35s ease;
 }
 
@@ -251,7 +269,7 @@ body {
 
 .input-field::placeholder {
   color: var(--text-muted);
-  opacity: 0.65;
+  opacity: 0.75;
 }
 
 .input-field:focus, .select-field:focus {
@@ -287,7 +305,10 @@ body {
 }
 
 .stat-value.highlight {
-  color: var(--accent-primary);
+  color: #fff;
+  text-decoration: underline;
+  text-decoration-color: var(--accent-primary);
+  text-underline-offset: 4px;
 }
 
 .stat-label {
@@ -329,7 +350,7 @@ body {
 
 .progress-bar-bg {
   height: 7px;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 99px;
   overflow: hidden;
   margin-top: 0.45rem;
@@ -381,8 +402,8 @@ body {
 }
 
 .badge.over {
-  background: rgba(239, 68, 68, 0.22);
-  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.3);
+  color: #fecaca;
 }
 
 .presets-bar {
@@ -459,9 +480,9 @@ body {
 }
 
 .btn-secondary {
-  background: rgba(239, 68, 68, 0.16);
-  color: #fda4af;
-  border: 1px solid rgba(239, 68, 68, 0.32);
+  background: rgba(239, 68, 68, 0.22);
+  color: #fecdd3;
+  border: 1px solid rgba(251, 113, 133, 0.4);
   border-radius: 10px;
   padding: 0.45rem 0.75rem;
   font-size: 0.8rem;
@@ -473,7 +494,7 @@ body {
 }
 
 .btn-secondary:hover {
-  background: rgba(239, 68, 68, 0.26);
+  background: rgba(239, 68, 68, 0.32);
 }
 
 .food-list {
@@ -531,7 +552,7 @@ body {
 
 .icon-btn:hover {
   color: #ef4444;
-  background: rgba(239, 68, 68, 0.15);
+  background: rgba(239, 68, 68, 0.2);
 }
 
 .empty-state {
