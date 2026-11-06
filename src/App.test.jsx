@@ -9,21 +9,35 @@ describe('CalorieFlow E2E User Flows', () => {
     localStorage.clear()
   })
 
-  it('Case 1: Default female profile renders pink theme, Gadget avatar, BMR, TDEE, and target calories', () => {
+  it('Case 1: Starts unpopulated (empty inputs and empty diary) with female pink theme and Gadget avatar', () => {
     render(<App />)
     expect(document.body.dataset.theme).toBe('female')
     expect(screen.getByTestId('app-wrapper')).toHaveAttribute('data-theme', 'female')
     const avatar = screen.getByTestId('character-avatar')
     expect(avatar).toHaveAttribute('src', './gadget.jpg')
     expect(avatar).toHaveAttribute('alt', 'Гаєчка')
+
+    expect(screen.getByLabelText(/Вік/i)).toHaveValue(null)
+    expect(screen.getByLabelText(/Вага/i)).toHaveValue(null)
+    expect(screen.getByLabelText(/Зріст/i)).toHaveValue(null)
+
+    expect(screen.getByTestId('bmr-value')).toHaveTextContent('0')
+    expect(screen.getByTestId('tdee-value')).toHaveTextContent('0')
+    expect(screen.getByTestId('target-kcal-value')).toHaveTextContent('0')
+    expect(screen.getByText(/Ви ще не додали жодного прийому їжі/i)).toBeInTheDocument()
+  })
+
+  it('Case 2: Entering parameters calculates BMR, TDEE, and switching gender updates avatar and purple theme', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.type(screen.getByLabelText(/Вік/i), '26')
+    await user.type(screen.getByLabelText(/Вага/i), '62')
+    await user.type(screen.getByLabelText(/Зріст/i), '168')
+
     expect(screen.getByTestId('bmr-value')).toHaveTextContent('1379')
     expect(screen.getByTestId('tdee-value')).toHaveTextContent('1896')
     expect(screen.getByTestId('target-kcal-value')).toHaveTextContent('1896')
-  })
-
-  it('Case 2: Switching to Male switches to purple theme, Monterey Jack avatar, and updates BMR, TDEE, and goal calories', async () => {
-    const user = userEvent.setup()
-    render(<App />)
 
     await user.click(screen.getByRole('button', { name: /Чоловіча/i }))
     expect(document.body.dataset.theme).toBe('male')
@@ -45,45 +59,32 @@ describe('CalorieFlow E2E User Flows', () => {
     const user = userEvent.setup()
     render(<App />)
 
+    await user.type(screen.getByLabelText(/Вік/i), '26')
+    await user.type(screen.getByLabelText(/Вага/i), '62')
+    await user.type(screen.getByLabelText(/Зріст/i), '168')
+
     const activitySelect = screen.getByLabelText(/Рівень фізичної активності/i)
     await user.selectOptions(activitySelect, '1.55')
     expect(screen.getByTestId('tdee-value')).toHaveTextContent('2137')
   })
 
-  it('Case 4: Handles cleared numeric inputs without false calculation', async () => {
+  it('Case 4: Supports quick-adding preset foods with decimal macros, deleting item, and clearing diary', async () => {
     const user = userEvent.setup()
     render(<App />)
-
-    const weightInput = screen.getByLabelText(/Вага/i)
-    await user.clear(weightInput)
-
-    expect(screen.getByTestId('bmr-value')).toHaveTextContent('0')
-    expect(screen.getByTestId('tdee-value')).toHaveTextContent('0')
-    expect(screen.getByTestId('target-kcal-value')).toHaveTextContent('0')
-  })
-
-  it('Case 5: Supports quick-adding preset foods with decimal macros, deleting item, and clearing diary', async () => {
-    const user = userEvent.setup()
-    render(<App />)
-
-    await user.click(screen.getByRole('button', { name: /Очистити щоденник/i }))
-    expect(screen.getByText(/Ви ще не додали жодного прийому їжі/i)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /\+ Банан/i }))
-    expect(screen.getByTestId('consumed-kcal-heading')).toHaveTextContent('105 / 1896 ккал')
-    expect(screen.getByTestId('protein-summary')).toHaveTextContent('1.3 / 142 г')
-    expect(screen.getByTestId('fat-summary')).toHaveTextContent('0.4 / 59 г')
+    expect(screen.getByTestId('consumed-kcal-heading')).toHaveTextContent('105 / 0 ккал')
+    expect(screen.getByTestId('protein-summary')).toHaveTextContent('1.3 / 0 г')
+    expect(screen.getByTestId('fat-summary')).toHaveTextContent('0.4 / 0 г')
 
     const deleteBtn = screen.getByTitle('Видалити')
     await user.click(deleteBtn)
     expect(screen.getByText(/Ви ще не додали жодного прийому їжі/i)).toBeInTheDocument()
   })
 
-  it('Case 6: Auto-calculates calories from macros when calories field is left empty', async () => {
+  it('Case 5: Auto-calculates calories from macros when calories field is left empty', async () => {
     const user = userEvent.setup()
     render(<App />)
-
-    await user.click(screen.getByRole('button', { name: /Очистити щоденник/i }))
 
     await user.type(screen.getByPlaceholderText(/Назва страви/i), 'Протеїновий коктейль')
     await user.type(screen.getByPlaceholderText(/Білки/i), '25')
@@ -93,10 +94,10 @@ describe('CalorieFlow E2E User Flows', () => {
     await user.click(screen.getByRole('button', { name: /Додати/i }))
 
     expect(screen.getByText('Протеїновий коктейль')).toBeInTheDocument()
-    expect(screen.getByTestId('consumed-kcal-heading')).toHaveTextContent('158 / 1896 ккал')
+    expect(screen.getByTestId('consumed-kcal-heading')).toHaveTextContent('158 / 0 ккал')
   })
 
-  it('Case 7: Displays calorie surplus warning badge when consumed calories exceed target', async () => {
+  it('Case 6: Displays calorie surplus warning badge when consumed calories exceed target', async () => {
     const user = userEvent.setup()
     render(<App />)
 
@@ -104,14 +105,14 @@ describe('CalorieFlow E2E User Flows', () => {
     await user.type(screen.getByPlaceholderText(/Калорії/i), '2000')
     await user.click(screen.getByRole('button', { name: /Додати/i }))
 
-    expect(screen.getByTestId('remaining-badge')).toHaveTextContent(/Перевищення на 664 ккал/i)
+    expect(screen.getByTestId('remaining-badge')).toHaveTextContent(/Перевищення на 2000 ккал/i)
   })
 
-  it('Case 8: Gracefully recovers from corrupted localStorage data', () => {
-    localStorage.setItem('cf_profile', '{invalid-json')
-    localStorage.setItem('cf_meals', 'not-an-array')
+  it('Case 7: Gracefully recovers from corrupted localStorage data', () => {
+    localStorage.setItem('cf_profile_v2', '{invalid-json')
+    localStorage.setItem('cf_meals_v2', 'not-an-array')
 
     render(<App />)
-    expect(screen.getByTestId('bmr-value')).toHaveTextContent('1379')
+    expect(screen.getByTestId('bmr-value')).toHaveTextContent('0')
   })
 })

@@ -43,17 +43,14 @@ const QUICK_FOODS = [
 
 const DEFAULT_PROFILE = {
   gender: 'female',
-  age: 26,
-  weight: 62,
-  height: 168,
+  age: '',
+  weight: '',
+  height: '',
   activity: 1.375,
   goal: 'maintain',
 }
 
-const DEFAULT_MEALS = [
-  { id: 1, name: 'Вівсянка з ягодами', kcal: 240, protein: 8, fat: 5, carbs: 42 },
-  { id: 2, name: 'Куряче філе та салат', kcal: 320, protein: 42, fat: 10, carbs: 14 },
-]
+const DEFAULT_MEALS = []
 
 function formatNum(num) {
   const n = Number(num) || 0
@@ -63,7 +60,7 @@ function formatNum(num) {
 export default function App() {
   const [profile, setProfile] = useState(() => {
     try {
-      const saved = localStorage.getItem('cf_profile')
+      const saved = localStorage.getItem('cf_profile_v2')
       if (saved) {
         const parsed = JSON.parse(saved)
         if (parsed && typeof parsed === 'object') {
@@ -78,7 +75,7 @@ export default function App() {
 
   const [meals, setMeals] = useState(() => {
     try {
-      const saved = localStorage.getItem('cf_meals')
+      const saved = localStorage.getItem('cf_meals_v2')
       if (saved) {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed)) {
@@ -105,7 +102,7 @@ export default function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('cf_profile', JSON.stringify(profile))
+      localStorage.setItem('cf_profile_v2', JSON.stringify(profile))
     } catch {
       // ignore storage quota errors
     }
@@ -114,7 +111,7 @@ export default function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('cf_meals', JSON.stringify(meals))
+      localStorage.setItem('cf_meals_v2', JSON.stringify(meals))
     } catch {
       // ignore storage quota errors
     }
@@ -291,7 +288,6 @@ export default function App() {
             </h2>
 
             <div className="form-group">
-              <span className="form-label">Стать (змінює колірну тему)</span>
               <div className="gender-toggle">
                 <button
                   type="button"
@@ -318,6 +314,7 @@ export default function App() {
                   type="number"
                   min="10"
                   max="110"
+                  placeholder="Напр. 25"
                   className="input-field"
                   value={profile.age}
                   onChange={(e) => setProfile({ ...profile, age: e.target.value })}
@@ -332,6 +329,7 @@ export default function App() {
                   min="25"
                   max="300"
                   step="0.1"
+                  placeholder="Напр. 60"
                   className="input-field"
                   value={profile.weight}
                   onChange={(e) => setProfile({ ...profile, weight: e.target.value })}
@@ -345,6 +343,7 @@ export default function App() {
                   type="number"
                   min="100"
                   max="250"
+                  placeholder="Напр. 168"
                   className="input-field"
                   value={profile.height}
                   onChange={(e) => setProfile({ ...profile, height: e.target.value })}
